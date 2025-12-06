@@ -27,14 +27,7 @@ struct host_info {
 void parse_mem_data(char *line, struct host_info *info_ptr);
 void parse_cpu_data(char *line, struct host_info *info_ptr);
 
-/* Return monotonic time in milliseconds */  // mover esto a un header mas adecuado
-static inline uint64_t time_now_ms() {
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
-        return 0;
-    }
-    return (uint64_t)ts.tv_sec * 1000ull + (uint64_t)(ts.tv_nsec / 1000000ull);
-}
+
 
 
 #endif

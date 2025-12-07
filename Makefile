@@ -9,7 +9,7 @@ LDLIBS   ?= -lm -lpthread
 
 AGENT_MEM_SRCS 	:= src/agents/agent_mem.c
 AGENT_CPU_SRCS 	:= src/agents/agent_cpu.c
-COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/parser.c
+COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/parser.c src/collector/handle_host.c
 VISUALIZER_SRCS := src/visualizer/visualizer.c src/collector/parser.c
 
 

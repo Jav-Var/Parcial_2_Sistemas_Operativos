@@ -5,17 +5,17 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-int main(int cantidad, char *args[]){ //Cantidad de argumentos y arreglo de argumentos
+int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argumentos
 
-    if (cantidad != 4) {
-        printf("Uso correcto: %s <ip_recolector> <puerto> <ip_logica_agente>\n", args[0]);
+    if (argc != 4) {
+        printf("Uso correcto: %s <ip_recolector> <puerto> <ip_logica_agente>\n", argv[0]);
         return 1;
     }
 
     //Extraer y parsear argumentos
-    char *IP_COLLECTOR = args[1];
-    int PORT = atoi(args[2]); //Convertir de string a entero
-    char *IP_AGENT = args[3];
+    char *IP_COLLECTOR = argv[1];
+    int PORT = atoi(argv[2]); //Convertir de string a entero
+    char *IP_AGENT = argv[3];
 
     //Pruebas de argumentos
     printf("IP Recolector: %s\n", IP_COLLECTOR);
@@ -74,28 +74,25 @@ int main(int cantidad, char *args[]){ //Cantidad de argumentos y arreglo de argu
             if (sscanf(line, "SwapTotal: %ld kB", &swap_total) == 1) continue;
             if (sscanf(line, "SwapFree: %ld kB", &swap_free) == 1) continue;
         }
-
-        mem_used_MB = (mem_total - mem_avaliable) / 1024.0;
-
+        
         //Convertir en MB
 
-        mem_total /= 1024;
-        mem_free /= 1024;
-        swap_total /= 1024; 
-        swap_free /= 1024; 
+        mem_used_MB = (mem_total - mem_avaliable) / 1024.0;
+        float mem_free_MB = mem_free / 1024.0;
+        float swap_total_MB = swap_total / 1024.0; 
+        float swap_free_MB = swap_free / 1024.0; 
 
-        //Pruebas
-        printf("MemTotal: %ld kB\n", mem_total);
-        printf("MemFree: %ld kB\n", mem_free);
-        printf("MemAvailable: %ld kB\n", mem_avaliable);
+        /*Pruebas
+        printf("MemFree: %.2f MB\n", mem_free_MB);
         printf("MemUsed: %.2f MB\n", mem_used_MB);
-        printf("SwapTotal: %ld kB\n", swap_total);
-        printf("SwapFree: %ld kB\n", swap_free);
+        printf("SwapTotal: %.2f MB\n", swap_total_MB);
+        printf("SwapFree: %.2f MB\n", swap_free_MB);
         printf("-----------------------\n");
-        
+        */
+
         //Texto formatado para enviar al recolector
-        snprintf(buffer, sizeof(buffer),"MEM;%s;%.2f;%lu;%lu;%lu\n", 
-             IP_AGENT, mem_used_MB, mem_free, swap_total, swap_free);
+        snprintf(buffer, sizeof(buffer),"MEM;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, mem_used_MB, mem_free_MB, swap_total_MB, swap_free_MB);
+
 
         send(sock, buffer, strlen(buffer), 0);
 

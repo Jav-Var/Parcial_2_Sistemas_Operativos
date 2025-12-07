@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <time.h> // mover time_now_ms
 
+#define SHM_KEY 0x7418
+#define SEM_KEY 0x7419
+#define MAX_HOSTS 4
 #ifndef PARSER_H
 
 #define PARSER_H

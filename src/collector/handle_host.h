@@ -17,14 +17,6 @@ struct connection_info {
     int semid; // Semaforo para sincronizar escritura con el visualizador
 };
 
-static inline uint64_t now_ms() {
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
-        return 0;
-    }
-    return (uint64_t)ts.tv_sec * 1000ull + (uint64_t)(ts.tv_nsec / 1000000ull);
-}
-
 void* handle_host(void* arg);
 
 #endif

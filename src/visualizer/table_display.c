@@ -1,19 +1,15 @@
 #define _GNU_SOURCE
 #include "table_display.h"
+#include "common.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-// Función auxiliar local para calcular tiempo actual
-static uint64_t current_timestamp() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000ull + (uint64_t)(ts.tv_nsec / 1000000ull);
-}
-
 void update_table(struct host_info *hosts) {
-    // Limpiar pantalla
+    
+    /* --- Limpia la pantalla e imprime la cabecera de la tabla --- */
+
     printf("\033[H\033[J"); 
 
     printf("=== MONITOR DE SISTEMA ===\n");
@@ -22,13 +18,15 @@ void update_table(struct host_info *hosts) {
            "IP", "CPU %", "Mem %", "Mem Used", "Mem Free", "Swap Use", "Status");
     printf("|-----------------|--------|--------|----------|----------|----------|--------|\n");
 
-    uint64_t now = current_timestamp();
+    /* -- Imprime los datos de cada host --- */
+
+    uint64_t now = now_ms();
 
     for (int i = 0; i < MAX_HOSTS; i++) {
         if (hosts[i].active && hosts[i].ip[0] != '\0') {
-            
-            // 1. Calculamos la inactividad PRIMERO
-            uint64_t diff = (now >= hosts[i].last_mem_ms) ? (now - hosts[i].last_mem_ms) : 0;
+
+            // Calculamos la inactividad
+            uint64_t diff = (now >= hosts[i].last_connection_ms) ? (now - hosts[i].last_connection_ms) : 0;
             
             // 2. Decidimos qué imprimir basado en el tiempo
             if (diff > 5000) {

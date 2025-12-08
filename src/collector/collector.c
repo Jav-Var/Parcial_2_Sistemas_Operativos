@@ -12,7 +12,6 @@
 #include <string.h>
 
 #define BACKLOG     4
-
 #define SHM_KEY 0x7418
 
 int main(int argc, char *argv[]) {
@@ -28,7 +27,7 @@ int main(int argc, char *argv[]) {
 
     /* --- Segmento de memoria compartida --- */
     
-    int shmid, semid;
+    int shmid;
     struct host_info *hosts;
     shmid = shmget(SHM_KEY, sizeof(struct host_info) * MAX_HOSTS, IPC_CREAT | 0644);
     if (shmid == -1) {
@@ -36,21 +35,23 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    // Array compartido que contiene structs con los datos de los hosts conectados
     hosts = (struct host_info*) shmat(shmid, NULL, 0); 
     if (hosts == (void*)-1) {
         perror("shmat failed");
         exit(1);
     }
+    // Marca todos como inactivos
     for (int i = 0; i < MAX_HOSTS; i++) {
         hosts[i].active = false;
     } 
 
     /* --- Crea el semaforo compartido con el visualizador --- */
 
-    semid = semget(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | 0666);
+    int semid = semget(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | 0666);
     if (semid == -1) {
         if (errno == EEXIST) {
-            /* Si ya existe, abrir el existente */
+            // Si ya existe, abrir el existente
             semid = semget(SEM_KEY, 1, 0666);
             if (semid == -1) {
                 perror("semget abrir existente");

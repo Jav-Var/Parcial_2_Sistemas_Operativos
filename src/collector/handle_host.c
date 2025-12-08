@@ -96,8 +96,7 @@ void* handle_host(void* arg) {
 
                 /* use the same timestamp for cpu and mem updates */
                 uint64_t now = now_ms();
-                h->last_mem_ms = now;
-                h->last_cpu_ms = now;
+                h->last_connection_ms = now;
 
                 h->active = true;
 

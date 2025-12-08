@@ -68,6 +68,28 @@ void* handle_host(void* arg) {
                 h->cpu_system = system_pct;
                 h->cpu_idle   = idle_pct;
 
+                printf(
+                    "ip = %s\n"
+                    "mem_used_mb   = %.2f MB\n"
+                    "mem_free_mb   = %.2f MB\n"
+                    "swap_total_mb = %.2f MB\n"
+                    "swap_free_mb  = %.2f MB\n"
+                    "cpu_usage     = %.2f%%\n"
+                    "cpu_user      = %.2f%%\n"
+                    "cpu_system    = %.2f%%\n"
+                    "cpu_idle      = %.2f%%\n"
+                    "---------------------\n",
+                    h->ip,
+                    h->mem_used_mb,
+                    h->mem_free_mb,
+                    h->swap_total_mb,
+                    h->swap_free_mb,
+                    h->cpu_usage,
+                    h->cpu_user,
+                    h->cpu_system,
+                    h->cpu_idle
+                );
+
                 /* use the same timestamp for cpu and mem updates */
                 uint64_t now = now_ms();
                 h->last_mem_ms = now;

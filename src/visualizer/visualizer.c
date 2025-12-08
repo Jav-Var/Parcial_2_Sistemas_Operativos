@@ -1,4 +1,4 @@
-#include "../collector/parser.h"       // Estructura compartida
+#include "parser.h"       // Estructura compartida
 #include "table_display.h"    // Función de tabla
 #include <stdio.h>
 #include <stdlib.h>

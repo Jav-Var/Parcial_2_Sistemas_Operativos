@@ -4,27 +4,24 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argumentos
-
     if (argc != 4) {
         printf("Uso correcto: %s <ip_recolector> <puerto> <ip_logica_agente>\n", argv[0]);
         return 1;
     }
 
-    // Extraer y parsear argumentos
+    /* Extraer y parsear argumentos */
     char *IP_COLLECTOR = argv[1];
     int PORT = atoi(argv[2]); // Convertir de string a entero
     char *IP_AGENT = argv[3];
 
-    //Pruebas de argumentos
     printf("IP Recolector: %s\n", IP_COLLECTOR);
     printf("Puerto: %d\n", PORT);
     printf("IP Logica Agente: %s\n", IP_AGENT);
 
-    struct sockaddr_in server_addr;
-
-    //Creacion del socket
+    /* Creacion del socket */
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
     if(sock < 0){
@@ -32,73 +29,72 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         return 1;
     }
 
+    struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr)); // Inicializar a cero
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    int i = inet_pton(AF_INET, IP_COLLECTOR, &server_addr.sin_addr);
-
-    if(i <= 0){
+    int r = inet_pton(AF_INET, IP_COLLECTOR, &server_addr.sin_addr);
+    if (r == 0) {
+        fprintf(stderr, "inet_pton: direccion IP invalida: %s\n", IP_COLLECTOR);
+        close(sock);
+        return 1;
+    } else if (r < 0) {
         perror("inet_pton");
+        close(sock);
         return 1;
     }
 
-    //Conexion al recolector
-    i = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
-
-    if(i < 0){
+    printf("Conectando al recolector...\n");
+    r = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if (r < 0){
         perror("connect");
+        close(sock);
         return 1;
     }
+    printf("Conectado al recolector\n");
 
     char buffer[512]; // Buffer para enviar datos al recolector
 
     // Inicializar variables previas de CPU
     unsigned long user_prev =0, nice_prev =0, system_prev =0, idle_prev=0; 
-    int first_read = 1;
+    bool first_read = true;
 
-    // Ciclo infinito para lectura de datos cada dos segundos
+    /* Ciclo infinito para lectura de datos cada dos segundos */
     while(1){ 
-
-        // ---- DATOS MEMORIA ----
+        // ---- MEMORIA ----
         FILE *f = fopen("/proc/meminfo", "r");
-
         if (!f){
             perror("fopen");
             return 1;
         }
 
-        //Datos de memoria en KB
+        // Datos de memoria en KB
         char mem_label[256];
-        long mem_total = 0, mem_free = 0, mem_avaliable = 0, swap_total = 0, swap_free = 0; //Variables en KB
-        float mem_used_MB; //Usamos float para obtener el valor real en MB
+        long mem_total = 0, mem_free = 0, mem_avaliable = 0, swap_total = 0, swap_free = 0; // Variables en KB
+        float mem_used_MB; // Usamos float para obtener el valor real en MB
 
         while(fgets(mem_label, sizeof(mem_label), f)){
-            if (sscanf(mem_label, "MemTotal: %lu kB", &mem_total) == 1) continue;
-            if (sscanf(mem_label, "MemFree: %lu kB", &mem_free) == 1) continue;
-            if (sscanf(mem_label, "MemAvailable: %lu kB", &mem_avaliable) == 1) continue;
-            if (sscanf(mem_label, "SwapTotal: %lu kB", &swap_total) == 1) continue;
-            if (sscanf(mem_label, "SwapFree: %lu kB", &swap_free) == 1) continue;
+            if (sscanf(mem_label, "MemTotal: %ld kB", &mem_total) == 1) continue;
+            if (sscanf(mem_label, "MemFree: %ld kB", &mem_free) == 1) continue;
+            if (sscanf(mem_label, "MemAvailable: %ld kB", &mem_avaliable) == 1) continue;
+            if (sscanf(mem_label, "SwapTotal: %ld kB", &swap_total) == 1) continue;
+            if (sscanf(mem_label, "SwapFree: %ld kB", &swap_free) == 1) continue;
         }
 
         fclose(f);
 
-        //Convertir en MB
+        // Convertir a MB
         mem_used_MB = (mem_total - mem_avaliable) / 1024.0;
         float mem_free_MB = mem_free / 1024.0;
         float swap_total_MB = swap_total / 1024.0; 
         float swap_free_MB = swap_free / 1024.0; 
 
-        // Cambio: ahora se envian juntos los datos de CPU y MEM
-        //snprintf(buffer, sizeof(buffer),"MEM;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, mem_used_MB, mem_free_MB, swap_total_MB, swap_free_MB);
-        //send(sock, buffer, strlen(buffer), 0);
-
-        // ---- DATOS CPU ----
+        // ---- CPU ----
 
         FILE *f_cpu = fopen("/proc/stat", "r");
-
         if(!f_cpu){
             perror("fopen");
-            fclose(f);
+            fclose(f_cpu);
             return 1;
         }
 
@@ -107,7 +103,6 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
 
         if(fscanf(f_cpu, "%4s %lu %lu %lu %lu", cpu_label, &user, &nice, &system, &idle) != 5){    
             fprintf(stderr, "Error leyendo la linea del cpu \n");
-            fclose(f);
             fclose(f_cpu);
             continue;
         }   
@@ -119,13 +114,13 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
             nice_prev = nice;
             system_prev = system;
             idle_prev = idle;
-            first_read = 0;
+            first_read = false;
 
-            sleep(1);
-            continue; //Revisar
+            sleep(2);
+            continue; // Revisar
         }
     
-        //Calculo de deltas
+        // Calculo de deltas
         unsigned long delta_user = user - user_prev;
         unsigned long delta_nice = nice - nice_prev;
         unsigned long delta_system = system - system_prev;
@@ -139,14 +134,11 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         float system_pct = (delta_system * 100.0) / cpu_total;
         float idle_pct = (delta_idle * 100.0) / cpu_total;
 
-        //Actualizar valores previos
+        // Actualizar valores previos
         user_prev = user;
         nice_prev = nice;
         system_prev = system;
         idle_prev = idle;
-
-        // Texto formatado (formatado?) para enviar al recolector
-        // snprintf(buffer, sizeof(buffer),"CPU;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, cpu_total, user_pct, system_pct, idle_pct);
 
         // Formato:
         // <ip_logica_agente>;<mem_used_MB>;<MemFree_MB>;<SwapTotal_MB>;<SwapFree_MB>;<CPU_usage>;<user_pct>;<system_pct>;<idle_pct>\n

@@ -72,7 +72,6 @@ void* handle_host(void* arg) {
                 h->cpu_system = system_pct;
                 h->cpu_idle   = idle_pct;
 
-                /*
                 printf(
                     "ip = %s\n"
                     "mem_used_mb   = %.2f MB\n"
@@ -94,7 +93,6 @@ void* handle_host(void* arg) {
                     h->cpu_system,
                     h->cpu_idle
                 );
-                */
 
                 /* use the same timestamp for cpu and mem updates */
                 uint64_t now = now_ms();

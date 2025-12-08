@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include "common.h"
 #include "parser.h"
 #include <stdint.h>
 #include <string.h>

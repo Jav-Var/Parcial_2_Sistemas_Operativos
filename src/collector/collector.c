@@ -1,11 +1,15 @@
+#include "common.h"
 #include "handle_host.h"
-#include <sys/shm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <errno.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <string.h>
 
 #define BACKLOG     4
 #define MAX_HOSTS   4
@@ -21,20 +25,49 @@ int main(int argc, char *argv[]) {
     }
 
     int port = atoi(argv[1]);
-    int shmid;
+
+    /* --- Segmento de memoria compartida y semaforo con el visualizador --- */
+    int shmid, semid;
     struct host_info *hosts;
-    
-    /* --- Segmento de memoria compartida con el visualizador --- */
     shmid = shmget(SHM_KEY, sizeof(struct host_info) * MAX_HOSTS, IPC_CREAT | 0644);
     if (shmid == -1) {
         perror("shmget failed");
         exit(1);
     }
-    hosts = (struct host_info*)shmat(shmid, NULL, 0); // incluye la memoria compartida al process address space
+
+    hosts = (struct host_info*) shmat(shmid, NULL, 0); // incluye la memoria compartida al process address space
     if (hosts == (void*)-1) {
         perror("shmat failed");
         exit(1);
     }
+    //memset(hosts, 0, sizeof(struct host_info) * MAX_HOSTS);
+    for (int i = 0; i < MAX_HOSTS; i++) {
+        hosts[i].active = false;
+    } 
+
+    semid = semget(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | 0666);
+    if (semid == -1) {
+        if (errno == EEXIST) {
+            /* Si ya existe, abrir el existente */
+            semid = semget(SEM_KEY, 1, 0666);
+            if (semid == -1) {
+                perror("semget abrir existente");
+                exit(1);
+            }
+        } else {
+            perror("semget create");
+            exit(1);
+        }
+    } 
+    // inicializamos el semaforo
+    union semun arg;
+    arg.val = 1; // semáforo inicial en 1 = disponible 
+    if (semctl(semid, 0, SETVAL, arg) == -1) {
+        perror("semctl SETVAL");
+        semctl(semid, 0, IPC_RMID);
+        exit(1);
+    }
+    printf("Semáforo creado e inicializado (id=%d, valor=1)\n", semid);
 
     /* --- Configuracion de socket --- */
     int socket_fd, new_socket;

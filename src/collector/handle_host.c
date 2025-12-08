@@ -1,3 +1,4 @@
+#include "common.h"
 #include "handle_host.h"
 #include <stdio.h>
 #include <stdbool.h>
@@ -27,6 +28,7 @@ void* handle_host(void* arg) {
 
     /* mark inactive until we successfully parse first message */
     h->active = false;
+    int semid = client->semid;
 
     while ((n = recv(sock, buf + pos, sizeof(buf) - 1 - pos, 0)) > 0) {
         pos += (size_t)n;
@@ -55,6 +57,8 @@ void* handle_host(void* arg) {
             if (parsed == 9) {
                 /* update host_info (best-effort; no external locking is assumed) */
                 /* copy IP - ensure null termination */
+                semaphore_p(semid);
+                
                 strncpy(h->ip, ip_str, sizeof(h->ip) - 1);
                 h->ip[sizeof(h->ip) - 1] = '\0';
 
@@ -96,6 +100,9 @@ void* handle_host(void* arg) {
                 h->last_cpu_ms = now;
 
                 h->active = true;
+
+                semaphore_v(semid);
+
             } else {
                 /* parsing failed; ignore this line but keep connection open */
                 fprintf(stderr, "collector: failed to parse line from %s: '%s'\n",

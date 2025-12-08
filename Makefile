@@ -2,7 +2,7 @@ CC ?= gcc
 OBJDIR := build/obj
 BINDIR := build
 
-CPPFLAGS ?= -I./src -I./src/collector
+CPPFLAGS ?= -I./src -I./src/collector -I./src/common
 CFLAGS   ?= -std=c11 -O2 -D_POSIX_C_SOURCE=200112L -g -Wall -Wextra -MMD -MP
 LDFLAGS  ?=
 LDLIBS   ?= -lm -lpthread
@@ -10,8 +10,8 @@ LDLIBS   ?= -lm -lpthread
 AGENT_SRCS 	:= src/agents/agents_both.c
 #AGENT_MEM_SRCS 	:= src/agents/agent_mem.c
 #AGENT_CPU_SRCS 	:= src/agents/agent_cpu.c
-COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/handle_host.c # src/collector/parser.c
-VISUALIZER_SRCS := src/visualizer/visualizer.c src/collector/parser.c src/visualizer/table_display.c
+COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/handle_host.c src/common/common.c # src/collector/parser.c 
+VISUALIZER_SRCS := src/visualizer/visualizer.c src/common/common.c src/visualizer/table_display.c
 
 AGENT_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_SRCS))
 #AGENT_MEM_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_MEM_SRCS))

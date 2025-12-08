@@ -1,4 +1,4 @@
-#include "../collector/parser.h"
+#include "common.h"
 
 #ifndef TABLE_DISPLAY_H
 #define TABLE_DISPLAY_H

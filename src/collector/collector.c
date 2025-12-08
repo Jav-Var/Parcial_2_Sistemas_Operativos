@@ -16,7 +16,9 @@
 #define SHM_KEY 0x7418
 
 int main(int argc, char *argv[]) {
+    
     /* --- Recibe port como argumento --- */
+    
     if (argc < 2) {
         printf("Uso correcto: %s <puerto>\n", argv[0]);
         exit(1);
@@ -24,7 +26,8 @@ int main(int argc, char *argv[]) {
 
     int port = atoi(argv[1]);
 
-    /* --- Segmento de memoria compartida y semaforo con el visualizador --- */
+    /* --- Segmento de memoria compartida --- */
+    
     int shmid, semid;
     struct host_info *hosts;
     shmid = shmget(SHM_KEY, sizeof(struct host_info) * MAX_HOSTS, IPC_CREAT | 0644);
@@ -33,15 +36,16 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    hosts = (struct host_info*) shmat(shmid, NULL, 0); // incluye la memoria compartida al process address space
+    hosts = (struct host_info*) shmat(shmid, NULL, 0); 
     if (hosts == (void*)-1) {
         perror("shmat failed");
         exit(1);
     }
-    //memset(hosts, 0, sizeof(struct host_info) * MAX_HOSTS);
     for (int i = 0; i < MAX_HOSTS; i++) {
         hosts[i].active = false;
     } 
+
+    /* --- Abre el semaforo compartido con el visualizador --- */
 
     semid = semget(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | 0666);
     if (semid == -1) {

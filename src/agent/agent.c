@@ -6,13 +6,14 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
-int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argumentos
+int main(int argc, char *argv[]){ // Cantidad de argumentos y arreglo de argumentos
     if (argc != 4) {
         printf("Uso correcto: %s <ip_recolector> <puerto> <ip_logica_agente>\n", argv[0]);
         return 1;
     }
 
-    /* Extraer y parsear argumentos */
+    /* --- Extraer argumentos --- */
+
     char *IP_COLLECTOR = argv[1];
     int PORT = atoi(argv[2]); // Convertir de string a entero
     char *IP_AGENT = argv[3];
@@ -21,7 +22,8 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
     printf("Puerto: %d\n", PORT);
     printf("IP Logica Agente: %s\n", IP_AGENT);
 
-    /* Creacion del socket */
+    /* --- Creacion del socket --- */
+    
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
     if(sock < 0){
@@ -44,14 +46,19 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         return 1;
     }
 
-    printf("Conectando al recolector...\n");
+    /* --- Conexion al colector ---- */
+
+    printf("Conectando al colector...\n");
     r = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (r < 0){
         perror("connect");
         close(sock);
         return 1;
     }
-    printf("Conectado al recolector\n");
+    printf("Conectado al colector\n");
+
+
+    /* ---- Ciclo de lectura datos y envio al colector ---- */
 
     char buffer[512]; // Buffer para enviar datos al recolector
 
@@ -59,37 +66,9 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
     unsigned long user_prev =0, nice_prev =0, system_prev =0, idle_prev=0; 
     bool first_read = true;
 
-    /* Ciclo infinito para lectura de datos cada dos segundos */
     while(1){ 
-        // ---- MEMORIA ----
-        FILE *f = fopen("/proc/meminfo", "r");
-        if (!f){
-            perror("fopen");
-            return 1;
-        }
 
-        // Datos de memoria en KB
-        char mem_label[256];
-        long mem_total = 0, mem_free = 0, mem_avaliable = 0, swap_total = 0, swap_free = 0; // Variables en KB
-        float mem_used_MB; // Usamos float para obtener el valor real en MB
-
-        while(fgets(mem_label, sizeof(mem_label), f)){
-            if (sscanf(mem_label, "MemTotal: %ld kB", &mem_total) == 1) continue;
-            if (sscanf(mem_label, "MemFree: %ld kB", &mem_free) == 1) continue;
-            if (sscanf(mem_label, "MemAvailable: %ld kB", &mem_avaliable) == 1) continue;
-            if (sscanf(mem_label, "SwapTotal: %ld kB", &swap_total) == 1) continue;
-            if (sscanf(mem_label, "SwapFree: %ld kB", &swap_free) == 1) continue;
-        }
-
-        fclose(f);
-
-        // Convertir a MB
-        mem_used_MB = (mem_total - mem_avaliable) / 1024.0;
-        float mem_free_MB = mem_free / 1024.0;
-        float swap_total_MB = swap_total / 1024.0; 
-        float swap_free_MB = swap_free / 1024.0; 
-
-        // ---- CPU ----
+        /* --- Extraccion de datos de CPU --- */
 
         FILE *f_cpu = fopen("/proc/stat", "r");
         if(!f_cpu){
@@ -109,7 +88,7 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
 
         fclose(f_cpu);
 
-        if(first_read){
+        if(first_read){ // Si es la primera lectura de cpu, continuar y obtener otra lectura
             user_prev = user;
             nice_prev = nice;
             system_prev = system;
@@ -117,7 +96,7 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
             first_read = false;
 
             sleep(2);
-            continue; // Revisar
+            continue;
         }
     
         // Calculo de deltas
@@ -140,9 +119,38 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         system_prev = system;
         idle_prev = idle;
 
-        // Formato:
-        // <ip_logica_agente>;<mem_used_MB>;<MemFree_MB>;<SwapTotal_MB>;<SwapFree_MB>;<CPU_usage>;<user_pct>;<system_pct>;<idle_pct>\n
+        /* --- Extraccion de datos de memoria --- */
+        
+        FILE *f_mem = fopen("/proc/meminfo", "r");
+        if (!f_mem){
+            perror("fopen");
+            return 1;
+        }
 
+        // Datos de memoria en KB
+        char mem_label[256];
+        long mem_total = 0, mem_free = 0, mem_avaliable = 0, swap_total = 0, swap_free = 0; // Variables en KB
+        float mem_used_MB; // Usamos float para obtener el valor real en MB
+
+        while(fgets(mem_label, sizeof(mem_label), f_mem)){
+            if (sscanf(mem_label, "MemTotal: %ld kB", &mem_total) == 1) continue;
+            if (sscanf(mem_label, "MemFree: %ld kB", &mem_free) == 1) continue;
+            if (sscanf(mem_label, "MemAvailable: %ld kB", &mem_avaliable) == 1) continue;
+            if (sscanf(mem_label, "SwapTotal: %ld kB", &swap_total) == 1) continue;
+            if (sscanf(mem_label, "SwapFree: %ld kB", &swap_free) == 1) continue;
+        }
+
+        fclose(f_mem);
+
+        // Convertir a MB
+        mem_used_MB = (mem_total - mem_avaliable) / 1024.0;
+        float mem_free_MB = mem_free / 1024.0;
+        float swap_total_MB = swap_total / 1024.0; 
+        float swap_free_MB = swap_free / 1024.0; 
+
+        /* --- Envio de datos al colector --- */
+
+        // Formato <ip_logica_agente>;<mem_used_MB>;<MemFree_MB>;<SwapTotal_MB>;<SwapFree_MB>;<CPU_usage>;<user_pct>;<system_pct>;<idle_pct>\n
         snprintf(
             buffer, sizeof(buffer), "%s;%.2f;%.2f;%.2f;%.2f;%.2f;%.2f;%.2f;%.2f\n",
             IP_AGENT, mem_used_MB, mem_free_MB, swap_total_MB, swap_free_MB, cpu_usage, user_pct, system_pct, idle_pct

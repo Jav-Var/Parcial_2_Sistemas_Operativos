@@ -72,7 +72,6 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
     pthread_t threads[MAX_HOSTS];
-    int thread_count = 0;
     
     if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) { // Crea el socket
         perror("Socket failed");
@@ -112,8 +111,17 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        if (thread_count > MAX_HOSTS) {
+        int thread_id = -1;
+        for (int i = 0; i < MAX_HOSTS; i++) {
+            if (hosts[i].active == false) {
+                thread_id = i;
+                break;
+            }
+        }
+        if (thread_id == -1) {
             fprintf(stderr, "Error: Maxima cantidad de conexiones");
+            close(new_socket);
+            continue;
         }
         
         // Create client info structure
@@ -126,11 +134,11 @@ int main(int argc, char *argv[]) {
         
         client->socket = new_socket;
         client->address = address;
-        client->data = &hosts[thread_count];
+        client->data = &hosts[thread_id];
         inet_ntop(AF_INET, &address.sin_addr, client->ip_str, INET_ADDRSTRLEN);
         
         // Create thread for new client
-        if (pthread_create(&threads[thread_count], NULL, handle_host, (void*)client) != 0) {
+        if (pthread_create(&threads[thread_id], NULL, handle_host, (void*)client) != 0) {
             perror("Thread creation failed");
             free(client);
             close(new_socket);
@@ -138,8 +146,7 @@ int main(int argc, char *argv[]) {
         }
         
         // Detach thread so it cleans up automatically
-        pthread_detach(threads[thread_count]);
-        thread_count++;
+        pthread_detach(threads[thread_id]);
     }
 
     return 0;

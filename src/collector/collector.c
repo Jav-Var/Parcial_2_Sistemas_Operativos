@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
         hosts[i].active = false;
     } 
 
-    /* --- Abre el semaforo compartido con el visualizador --- */
+    /* --- Crea el semaforo compartido con el visualizador --- */
 
     semid = semget(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | 0666);
     if (semid == -1) {

@@ -7,15 +7,11 @@ CFLAGS   ?= -std=c11 -O2 -D_POSIX_C_SOURCE=200112L -g -Wall -Wextra -MMD -MP
 LDFLAGS  ?=
 LDLIBS   ?= -lm -lpthread
 
-AGENT_SRCS 	:= src/agents/agents_both.c
-#AGENT_MEM_SRCS 	:= src/agents/agent_mem.c
-#AGENT_CPU_SRCS 	:= src/agents/agent_cpu.c
-COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/handle_host.c src/common/common.c # src/collector/parser.c 
-VISUALIZER_SRCS := src/visualizer/visualizer.c src/common/common.c src/visualizer/table_display.c
+AGENT_SRCS 	:= src/agent/agent.c
+COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/handle_host.c src/common/common.c  
+VISUALIZER_SRCS := src/visualizer/visualizer.c src/visualizer/table_display.c src/common/common.c
 
 AGENT_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_SRCS))
-#AGENT_MEM_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_MEM_SRCS))
-#AGENT_CPU_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_CPU_SRCS))
 COLLECTOR_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(COLLECTOR_SRCS))
 VISUALIZER_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(VISUALIZER_SRCS))
 

@@ -12,8 +12,6 @@
 #include <string.h>
 
 #define BACKLOG     4
-#define MAX_HOSTS   4
-#define MAX_CONN    (MAX_HOSTS * 2) 
 
 #define SHM_KEY 0x7418
 
@@ -73,7 +71,7 @@ int main(int argc, char *argv[]) {
     int socket_fd, new_socket;
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
-    pthread_t threads[MAX_CONN];
+    pthread_t threads[MAX_HOSTS];
     int thread_count = 0;
     
     if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) { // Crea el socket
@@ -114,7 +112,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        if (thread_count > MAX_CONN) {
+        if (thread_count > MAX_HOSTS) {
             fprintf(stderr, "Error: Maxima cantidad de conexiones");
         }
         

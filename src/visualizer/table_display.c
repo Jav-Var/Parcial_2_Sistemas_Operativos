@@ -27,37 +27,40 @@ void update_table(struct host_info *hosts) {
     for (int i = 0; i < MAX_HOSTS; i++) {
         if (hosts[i].active && hosts[i].ip[0] != '\0') {
             
-            // Calculo de porcentaje de memoria
-            double mem_pct = 0.0;
-            // Sumamos como double para evitar problemas de tipos
-            double total_mem = hosts[i].mem_used_mb + hosts[i].mem_free_mb;
-            
-            if (total_mem > 0) {
-                mem_pct = (hosts[i].mem_used_mb / total_mem) * 100.0;
-            }
-
-            // Calculo de inactividad
+            // 1. Calculamos la inactividad PRIMERO
             uint64_t diff = (now >= hosts[i].last_mem_ms) ? (now - hosts[i].last_mem_ms) : 0;
             
-            // CORRECCIÓN 1: Aumentamos el buffer a 32 para evitar overflow
-            char status[32] = "OK"; 
-            
+            // 2. Decidimos qué imprimir basado en el tiempo
             if (diff > 5000) {
-                // CORRECCIÓN 1: Usamos %lu para el tiempo (que sí es entero)
-                sprintf(status, "LAG (%lus)", diff/1000);
+                // --- CASO DESCONECTADO (> 5 seg) ---
+                // Muestra la IP, pero el resto son guiones. Estado "DOWN".
+                printf("| %-15s |   ---  |   ---  |    ---   |    ---   |    ---   | %-6s |\n",
+                       hosts[i].ip, "DOWN");
+            } 
+            else {
+                // --- CASO CONECTADO (Funcionamiento normal) ---
+                
+                // Calculo de porcentaje de memoria
+                double mem_pct = 0.0;
+                double total_mem = hosts[i].mem_used_mb + hosts[i].mem_free_mb;
+                
+                if (total_mem > 0) {
+                    mem_pct = (hosts[i].mem_used_mb / total_mem) * 100.0;
+                }
+
+                // Imprimimos los datos reales
+                printf("| %-15s | %5.1f%% | %5.1f%% | %5.0f MB | %5.0f MB | %5.0f MB | %-6s |\n",
+                       hosts[i].ip,
+                       hosts[i].cpu_usage,
+                       mem_pct,
+                       hosts[i].mem_used_mb,
+                       hosts[i].mem_free_mb,
+                       (hosts[i].swap_total_mb - hosts[i].swap_free_mb),
+                       "OK");
             }
 
-            // CORRECCIÓN 2: Usamos %5.0f para la memoria. 
-            // El .0f le dice que imprima el double sin decimales (parece entero).
-            printf("| %-15s | %5.1f%% | %5.1f%% | %5.0f MB | %5.0f MB | %5.0f MB | %-6s |\n",
-                   hosts[i].ip,
-                   hosts[i].cpu_usage,
-                   mem_pct,
-                   hosts[i].mem_used_mb,
-                   hosts[i].mem_free_mb,
-                   (hosts[i].swap_total_mb - hosts[i].swap_free_mb),
-                   status);
         } else {
+            // --- CASO SLOT VACÍO ---
             printf("| %-15s |   --   |   --   |    --    |    --    |    --    |   --   |\n", "---");
         }
     }

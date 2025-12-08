@@ -7,31 +7,37 @@ CFLAGS   ?= -std=c11 -O2 -D_POSIX_C_SOURCE=200112L -g -Wall -Wextra -MMD -MP
 LDFLAGS  ?=
 LDLIBS   ?= -lm -lpthread
 
-AGENT_MEM_SRCS 	:= src/agents/agent_mem.c
-AGENT_CPU_SRCS 	:= src/agents/agent_cpu.c
-COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/parser.c src/collector/handle_host.c
-VISUALIZER_SRCS := src/visualizer/visualizer.c src/collector/parser.c
+AGENT_SRCS 	:= src/agents/agents_both.c
+#AGENT_MEM_SRCS 	:= src/agents/agent_mem.c
+#AGENT_CPU_SRCS 	:= src/agents/agent_cpu.c
+COLLECTOR_SRCS 	:= src/collector/collector.c src/collector/handle_host.c # src/collector/parser.c
+VISUALIZER_SRCS := src/visualizer/visualizer.c # src/collector/parser.c
 
-
-AGENT_MEM_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_MEM_SRCS))
-AGENT_CPU_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_CPU_SRCS))
+AGENT_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_SRCS))
+#AGENT_MEM_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_MEM_SRCS))
+#AGENT_CPU_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(AGENT_CPU_SRCS))
 COLLECTOR_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(COLLECTOR_SRCS))
 VISUALIZER_OBJS := $(patsubst src/%.c,$(OBJDIR)/%.o,$(VISUALIZER_SRCS))
 
 .PHONY: all clean distclean agent_mem agent_cpu collector
 
-all: agent_mem agent_cpu collector visualizer
+all: agent collector visualizer
 
-agent_cpu: $(BINDIR)/agent_cpu
-agent_mem: $(BINDIR)/agent_mem
+#agent_cpu: $(BINDIR)/agent_cpu
+#agent_mem: $(BINDIR)/agent_mem
+agent: $(BINDIR)/agent
 collector: $(BINDIR)/collector
 visualizer: $(BINDIR)/visualizer
 
-$(BINDIR)/agent_mem: $(AGENT_MEM_OBJS)
-	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+#$(BINDIR)/agent_mem: $(AGENT_MEM_OBJS)
+#	@mkdir -p $(dir $@)
+#	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-$(BINDIR)/agent_cpu: $(AGENT_CPU_OBJS)
+#$(BINDIR)/agent_cpu: $(AGENT_CPU_OBJS)
+#	@mkdir -p $(dir $@)
+#	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+$(BINDIR)/agent: $(AGENT_OBJS)
 	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 

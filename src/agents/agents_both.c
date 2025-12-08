@@ -12,9 +12,9 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         return 1;
     }
 
-    //Extraer y parsear argumentos
+    // Extraer y parsear argumentos
     char *IP_COLLECTOR = argv[1];
-    int PORT = atoi(argv[2]); //Convertir de string a entero
+    int PORT = atoi(argv[2]); // Convertir de string a entero
     char *IP_AGENT = argv[3];
 
     //Pruebas de argumentos
@@ -50,18 +50,16 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         return 1;
     }
 
-    char buffer[256]; //Buffer para enviar datos al recolector
+    char buffer[512]; // Buffer para enviar datos al recolector
 
-    //Inicializar variables previas de CPU
+    // Inicializar variables previas de CPU
     unsigned long user_prev =0, nice_prev =0, system_prev =0, idle_prev=0; 
     int first_read = 1;
 
-
-
-    //Ciclo infinito para lectura de datos cada dos segundos
+    // Ciclo infinito para lectura de datos cada dos segundos
     while(1){ 
 
-        //MEMORIA ------------------------------------------------------
+        // ---- DATOS MEMORIA ----
         FILE *f = fopen("/proc/meminfo", "r");
 
         if (!f){
@@ -90,12 +88,11 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         float swap_total_MB = swap_total / 1024.0; 
         float swap_free_MB = swap_free / 1024.0; 
 
-        //Texto formatado para enviar al recolector
-        snprintf(buffer, sizeof(buffer),"MEM;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, mem_used_MB, mem_free_MB, swap_total_MB, swap_free_MB);
+        // Cambio: ahora se envian juntos los datos de CPU y MEM
+        //snprintf(buffer, sizeof(buffer),"MEM;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, mem_used_MB, mem_free_MB, swap_total_MB, swap_free_MB);
+        //send(sock, buffer, strlen(buffer), 0);
 
-        send(sock, buffer, strlen(buffer), 0);
-
-        //CPU---------------------------------------------------------
+        // ---- DATOS CPU ----
 
         FILE *f_cpu = fopen("/proc/stat", "r");
 
@@ -148,9 +145,17 @@ int main(int argc, char *argv[]){ //Cantidad de argumentos y arreglo de argument
         system_prev = system;
         idle_prev = idle;
 
-        //Texto formatado para enviar al recolector
-        snprintf(buffer, sizeof(buffer),"CPU;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, cpu_total, user_pct, system_pct, idle_pct);
+        // Texto formatado (formatado?) para enviar al recolector
+        // snprintf(buffer, sizeof(buffer),"CPU;%s;%.2f;%.2f;%.2f;%.2f\n", IP_AGENT, cpu_total, user_pct, system_pct, idle_pct);
 
+        // Formato:
+        // <ip_logica_agente>;<mem_used_MB>;<MemFree_MB>;<SwapTotal_MB>;<SwapFree_MB>;<CPU_usage>;<user_pct>;<system_pct>;<idle_pct>\n
+
+        snprintf(
+            buffer, sizeof(buffer), "%s;%.2f;%.2f;%.2f;%.2f;%.2f;%.2f;%.2f;%.2f\n",
+            IP_AGENT, mem_used_MB, mem_free_MB, swap_total_MB, swap_free_MB, cpu_usage, user_pct, system_pct, idle_pct
+        );
+        
         send(sock, buffer, strlen(buffer), 0);
 
         sleep(2);

@@ -1,3 +1,8 @@
+
+
+#ifndef PARSER_H
+
+#define PARSER_H
 #define _GNU_SOURCE
 #include <stdint.h>
 #include <string.h>
@@ -29,7 +34,6 @@ struct host_info {
 
 void parse_mem_data(char *line, struct host_info *info_ptr);
 void parse_cpu_data(char *line, struct host_info *info_ptr);
-
 
 
 

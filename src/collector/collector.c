@@ -1,7 +1,7 @@
-#include "parser.h"
 #include "handle_host.h"
 #include <sys/shm.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -16,11 +16,11 @@
 int main(int argc, char *argv[]) {
     /* --- Recibe port como argumento --- */
     if (argc < 2) {
-        printf("Uso correcto: ./collector <puerto>");
+        printf("Uso correcto: %s <puerto>\n", argv[0]);
         exit(1);
     }
 
-    int port = atoi(argv[2]);
+    int port = atoi(argv[1]);
     int shmid;
     struct host_info *hosts;
     
@@ -39,11 +39,11 @@ int main(int argc, char *argv[]) {
     /* --- Configuracion de socket --- */
     int socket_fd, new_socket;
     struct sockaddr_in address;
-    int addrlen = sizeof(address);
+    socklen_t addrlen = sizeof(address);
     pthread_t threads[MAX_CONN];
     int thread_count = 0;
     
-    if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // Crea el socket
+    if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) { // Crea el socket
         perror("Socket failed");
         exit(EXIT_FAILURE);
     }
@@ -80,6 +80,10 @@ int main(int argc, char *argv[]) {
             perror("Accept failed");
             continue;
         }
+
+        if (thread_count > MAX_CONN) {
+            fprintf(stderr, "Error: Maxima cantidad de conexiones");
+        }
         
         // Create client info structure
         struct connection_info* client = malloc(sizeof(struct connection_info));
@@ -95,7 +99,7 @@ int main(int argc, char *argv[]) {
         inet_ntop(AF_INET, &address.sin_addr, client->ip_str, INET_ADDRSTRLEN);
         
         // Create thread for new client
-        if (pthread_create(threads[thread_count], NULL, handle_client, (void*)client) != 0) {
+        if (pthread_create(&threads[thread_count], NULL, handle_host, (void*)client) != 0) {
             perror("Thread creation failed");
             free(client);
             close(new_socket);

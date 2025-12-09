@@ -95,6 +95,7 @@ void* handle_host(void* arg) {
                 );
 
                 /* use the same timestamp for cpu and mem updates */
+                printf("Parsed\n");
                 uint64_t now = now_ms();
                 h->last_connection_ms = now;
 

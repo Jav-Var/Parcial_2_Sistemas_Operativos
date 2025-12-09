@@ -8,7 +8,7 @@
 #include <time.h>
 
 // Keys de memoria compartida y semaforo
-#define SHM_KEY 0x7420
+#define SHM_KEY 0x7418
 #define SEM_KEY 0x7419
 
 #define MAX_HOSTS 4
@@ -23,9 +23,7 @@ struct host_info {
     float mem_free_mb;
     float swap_total_mb;
     float swap_free_mb;
-    uint16_t last_connection_ms; // 0 = Nunca recibido
-    uint64_t last_mem_ms;   
-    uint64_t last_cpu_ms;   
+    uint64_t last_connection_ms; // 0 = Nunca recibido
     bool active; // Se marca como activo si hay un hilo usando el struct
 };
 

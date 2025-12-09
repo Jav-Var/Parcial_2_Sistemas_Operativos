@@ -150,8 +150,6 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        client->data->active = true;
-
         // Para que se limpie automáticamente el hilo
         pthread_detach(threads[thread_id]);
     }

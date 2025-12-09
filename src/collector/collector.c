@@ -70,13 +70,13 @@ int main(int argc, char *argv[]) {
         semctl(semid, 0, IPC_RMID);
         exit(1);
     }
-    printf("Semáforo creado e inicializado (id=%d, valor=1)\n", semid);
 
-    /* --- Configuracion de socket --- */
-    int socket_fd, new_socket;
+    /* --- Creacion del socket --- */
+
+    int socket_fd;
     struct sockaddr_in address;
     socklen_t addrlen = sizeof(address);
-    pthread_t threads[MAX_HOSTS];
+    pthread_t threads[MAX_HOSTS]; 
     
     if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) { // Crea el socket
         perror("Socket failed");
@@ -106,16 +106,18 @@ int main(int argc, char *argv[]) {
         perror("Listen failed");
         exit(EXIT_FAILURE);
     }
-    
 
     /* --- Server loop --- */
+
+    int new_socket;
     while (1) {
-        // Accept new connection
+        // Acepta la nueva conexion en un nuevo socket
         if ((new_socket = accept(socket_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
             perror("Accept failed");
             continue;
         }
 
+        // Busca un slot inactivo
         int thread_id = -1;
         for (int i = 0; i < MAX_HOSTS; i++) {
             if (hosts[i].active == false) {
@@ -129,7 +131,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
         
-        // Create client info structure
+        // Crea un struct con los datos de la conexion para pasarlos al hilo
         struct connection_info* client = malloc(sizeof(struct connection_info));
         if (client == NULL) {
             perror("malloc failed");
@@ -137,12 +139,13 @@ int main(int argc, char *argv[]) {
             continue;
         }
         
+        // Escribe los datos de la conexion
         client->socket = new_socket;
         client->address = address;
-        client->data = &hosts[thread_id];
+        client->data = &hosts[thread_id]; // Struct para almacenar los datos de memoria y cpu
         inet_ntop(AF_INET, &address.sin_addr, client->ip_str, INET_ADDRSTRLEN);
         
-        // Create thread for new client
+        // Crea un nuevo hilo para el host
         if (pthread_create(&threads[thread_id], NULL, handle_host, (void*)client) != 0) {
             perror("Thread creation failed");
             free(client);
@@ -150,7 +153,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
         
-        // Detach thread so it cleans up automatically
+        // Para que se limpie automáticamente el hilo
         pthread_detach(threads[thread_id]);
     }
 

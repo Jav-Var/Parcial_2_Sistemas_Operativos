@@ -44,20 +44,17 @@ int main(int argc, char *argv[]) {
 
     /* --- Crea el semaforo compartido con el visualizador --- */
 
-    int semid = semget(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | 0666);
+    int semid = semget(SEM_KEY, 0, 0666);   // intentar abrir existente (nsems=0)
     if (semid == -1) {
-        if (errno == EEXIST) {
-            // Si ya existe, abrir el existente
-            semid = semget(SEM_KEY, 1, 0666);
-            if (semid == -1) {
-                perror("semget abrir existente");
-                exit(1);
-            }
+        if (errno == ENOENT) {
+            semid = semget(SEM_KEY, 1, IPC_CREAT | 0666); // crear si no existe
+            if (semid == -1) { perror("semget create"); exit(1); }
         } else {
-            perror("semget create");
+            perror("semget open existing");
             exit(1);
         }
-    } 
+    }
+
 
     // inicializamos el semaforo
     union semun arg;

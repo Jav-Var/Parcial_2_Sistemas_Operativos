@@ -9,12 +9,14 @@
 #include <errno.h>
 
 int main() {
-    int shmid, semid;
-    struct host_info *hosts;
-    
+
     printf("Iniciando visualizador...\n");
 
-    // 1. Conectar a Memoria Compartida
+    /* -- Obtiene el segmento de memoria compartida creado por el colector -- */
+
+    int shmid, semid;
+    struct host_info *hosts;
+
     shmid = shmget(SHM_KEY, 0, 0666);
     if (shmid == -1) {
         perror("Fallo shmget (¿Está corriendo el collector?)");
@@ -27,16 +29,18 @@ int main() {
         exit(1);
     }
 
-    // 2. Conectar al Semáforo (Ya debe haberlo creado el collector)
+    /* -- Obtiene el semaforo creado por el colector -- */
+
     semid = semget(SEM_KEY, 1, 0666);
     if (semid == -1) {
         perror("Fallo semget (El collector debe iniciar primero para crear el semáforo)");
         exit(1);
     }
 
-    printf("Conexión exitosa. Mostrando datos...\n");
+    /* --- Inicia el bucle para mostrar los datos --- */
 
-    // 3. Loop infinito
+    printf("Mostrando datos...\n");
+
     while (1) {
         // Entrar a Sección Crítica
         semaphore_p(semid);
@@ -51,7 +55,6 @@ int main() {
         sleep(1);
     }
 
-    // Código inalcanzable pero formalmente correcto
     shmdt(hosts);
     return 0;
 }

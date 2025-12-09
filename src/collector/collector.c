@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
     } 
+    
     // inicializamos el semaforo
     union semun arg;
     arg.val = 1; // semáforo inicial en 1 = disponible 

@@ -7,10 +7,10 @@
 #include <stdint.h>
 
 void update_table(struct host_info *hosts) {
-    
-    /* --- Limpia la pantalla e imprime la cabecera de la tabla --- */
 
-    printf("\033[H\033[J"); 
+    printf("\033[H\033[J"); // hace clear a la pantalla
+
+    /* --- Imprime la cabecera de la tabla --- */
 
     printf("=== MONITOR DE SISTEMA ===\n");
     printf("-------------------------------------------------------------------------------\n");
@@ -23,23 +23,22 @@ void update_table(struct host_info *hosts) {
     uint64_t now = now_ms();
 
     for (int i = 0; i < MAX_HOSTS; i++) {
-        if (hosts[i].active && hosts[i].ip[0] != '\0') {
+        if (hosts[i].active && hosts[i].ip[0] != '\0') { // Si el slot en el array de hosts esta activo
 
-            // Calculamos la inactividad
+            // Calculamos si hay inactividad
             uint64_t diff = (now >= hosts[i].last_connection_ms) ? (now - hosts[i].last_connection_ms) : 0;
             
-            // 2. Decidimos qué imprimir basado en el tiempo
+            // Decidimos qué imprimir basado en el tiempo
             if (diff > 5000) {
-                // --- CASO DESCONECTADO (> 5 seg) ---
+                // --- DESCONECTADO (> 5 seg) ---
+              
                 // Muestra la IP, pero el resto son guiones. Estado "DOWN".
                 printf("| %-15s |   ---  |   ---  |    ---   |    ---   |    ---   | %-6s |\n",
-                       hosts[i].ip, "DOWN");
-            } 
-            else {
-                // --- CASO CONECTADO (Funcionamiento normal) ---
+                        hosts[i].ip, "DOWN");
+            } else {
+                // --- CONECTADO (Funcionamiento normal) ---
                 
-                // Calculo de porcentaje de memoria
-                double mem_pct = 0.0;
+                double mem_pct = 0.0; // Porcentaje de uso de memoria
                 double total_mem = hosts[i].mem_used_mb + hosts[i].mem_free_mb;
                 
                 if (total_mem > 0) {

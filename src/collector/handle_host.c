@@ -8,13 +8,17 @@
 #include <string.h>
 
 void* handle_host(void* arg) {
+    
+    /* --- Argumentos de la funcion --- */
+    
     struct connection_info* client = (struct connection_info*)arg;
     if (client == NULL) {
         return NULL;
     }
 
-    int sock = client->socket;
-    struct host_info* h = client->data;
+    int semid = client->semid; // Semaforo para sincronizar la seccion critica
+    int sock = client->socket; // Socket
+    struct host_info* h = client->data; // Estructura para guardar los datos
     if (h == NULL) {
         close(sock);
         free(client);
@@ -22,14 +26,12 @@ void* handle_host(void* arg) {
     }
 
     /* read loop: accumulate until newline, handle partial reads */
-    char buf[1024];
-    size_t pos = 0;
+
+    char buf[1024]; // Buffer para recibir datos del agente
+    size_t pos = 0; // Bytes leidos en el buffer
+    
+
     ssize_t n;
-
-    /* mark inactive until we successfully parse first message */
-    h->active = false;
-    int semid = client->semid;
-
     while ((n = recv(sock, buf + pos, sizeof(buf) - 1 - pos, 0)) > 0) {
         pos += (size_t)n;
         buf[pos] = '\0';
@@ -42,9 +44,7 @@ void* handle_host(void* arg) {
             /* strip optional '\r' at end (handle CRLF) */
             if (nl > line_start && *(nl - 1) == '\r') *(nl - 1) = '\0';
 
-            /* expected message:
-               <ip>;<mem_used_MB>;<MemFree_MB>;<SwapTotal_MB>;<SwapFree_MB>;<CPU_usage>;<user_pct>;<system_pct>;<idle_pct>
-            */
+            // Formato: <ip>;<mem_used_MB>;<MemFree_MB>;<SwapTotal_MB>;<SwapFree_MB>;<CPU_usage>;<user_pct>;<system_pct>;<idle_pct>
             char ip_str[32];
             float mem_used, mem_free, swap_total, swap_free;
             float cpu_usage, user_pct, system_pct, idle_pct;

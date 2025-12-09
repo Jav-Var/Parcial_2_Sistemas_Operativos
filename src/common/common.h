@@ -1,11 +1,14 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdbool.h>
 #include <stdint.h>
+#include <time.h>
 
 // Keys de memoria compartida y semaforo
-#define SHM_KEY 0x7418 
+#define SHM_KEY 0x7420
 #define SEM_KEY 0x7419
 
 #define MAX_HOSTS 4

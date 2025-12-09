@@ -12,7 +12,6 @@
 #include <string.h>
 
 #define BACKLOG     4
-#define SHM_KEY 0x7418
 
 int main(int argc, char *argv[]) {
     
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
     } 
-    
+
     // inicializamos el semaforo
     union semun arg;
     arg.val = 1; // semáforo inicial en 1 = disponible 
@@ -153,7 +152,9 @@ int main(int argc, char *argv[]) {
             close(new_socket);
             continue;
         }
-        
+
+        client->data->active = true;
+
         // Para que se limpie automáticamente el hilo
         pthread_detach(threads[thread_id]);
     }

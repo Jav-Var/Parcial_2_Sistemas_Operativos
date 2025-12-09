@@ -3,7 +3,7 @@ OBJDIR := build/obj
 BINDIR := build
 
 CPPFLAGS ?= -I./src -I./src/collector -I./src/common
-CFLAGS   ?= -std=c11 -O2 -D_POSIX_C_SOURCE=200112L -g -Wall -Wextra -MMD -MP
+CFLAGS   ?= -std=c11 -O2 -g -Wall -Wextra -MMD -MP # -D_POSIX_C_SOURCE=200112L
 LDFLAGS  ?=
 LDLIBS   ?= -lm -lpthread
 

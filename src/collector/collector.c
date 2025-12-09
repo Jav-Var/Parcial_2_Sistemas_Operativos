@@ -40,10 +40,7 @@ int main(int argc, char *argv[]) {
         perror("shmat failed");
         exit(1);
     }
-    // Marca todos como inactivos
-    for (int i = 0; i < MAX_HOSTS; i++) {
-        hosts[i].active = false;
-    } 
+    memset(hosts, 0, sizeof(struct host_info) * MAX_HOSTS);
 
     /* --- Crea el semaforo compartido con el visualizador --- */
 

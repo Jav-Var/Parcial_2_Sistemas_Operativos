@@ -138,7 +138,8 @@ int main(int argc, char *argv[]) {
         client->address = address;
         client->data = &hosts[thread_id]; // Struct para almacenar los datos de memoria y cpu
         inet_ntop(AF_INET, &address.sin_addr, client->ip_str, INET_ADDRSTRLEN);
-        
+        client->semid = semid;
+
         // Crea un nuevo hilo para el host
         if (pthread_create(&threads[thread_id], NULL, handle_host, (void*)client) != 0) {
             perror("Thread creation failed");
